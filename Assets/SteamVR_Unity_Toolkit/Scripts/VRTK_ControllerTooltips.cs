@@ -5,6 +5,15 @@
 
     public class VRTK_ControllerTooltips : MonoBehaviour
     {
+        public enum TooltipButtons
+        {
+            TriggerTooltip,
+            GripTooltip,
+            TouchpadTooltip,
+            AppMenuTooltip,
+            None
+        }
+
         public string triggerText;
         public string gripText;
         public string touchpadText;
@@ -19,15 +28,44 @@
         public Transform touchpad;
         public Transform appMenu;
 
-        public void ShowTips(bool state)
+        private bool triggerInitialised = false;
+        private bool gripInitialised = false;
+        private bool touchpadInitialised = false;
+        private bool appMenuInitialised = false;
+
+        private GameObject[] buttonTooltips;
+
+        public void ShowTips(bool state, TooltipButtons element = TooltipButtons.None)
         {
-            foreach (var tooltip in this.GetComponentsInChildren<VRTK_ObjectTooltip>())
+            if (element == TooltipButtons.None)
             {
-                tooltip.gameObject.SetActive(state);
+                for(int i = 0; i < buttonTooltips.Length; i++)
+                {
+                    buttonTooltips[i].SetActive(state);
+                }
+            } else
+            {
+                buttonTooltips[(int)element].SetActive(state);
             }
         }
 
-        private void Start()
+        private void Awake()
+        {
+            triggerInitialised = false;
+            gripInitialised = false;
+            touchpadInitialised = false;
+            appMenuInitialised = false;
+            InitialiseTips();
+            buttonTooltips = new GameObject[4]
+            {
+                this.transform.FindChild(TooltipButtons.TriggerTooltip.ToString()).gameObject,
+                this.transform.FindChild(TooltipButtons.GripTooltip.ToString()).gameObject,
+                this.transform.FindChild(TooltipButtons.TouchpadTooltip.ToString()).gameObject,
+                this.transform.FindChild(TooltipButtons.AppMenuTooltip.ToString()).gameObject,
+            };
+        }
+
+        private void InitialiseTips()
         {
             foreach (var tooltip in this.GetComponentsInChildren<VRTK_ObjectTooltip>())
             {
@@ -39,18 +77,34 @@
                     case "trigger":
                         tipText = triggerText;
                         tipTransform = GetTransform(trigger, "trigger");
+                        if (tipTransform != null)
+                        {
+                            triggerInitialised = true;
+                        }
                         break;
                     case "grip":
                         tipText = gripText;
                         tipTransform = GetTransform(grip, "lgrip"); ;
+                        if (tipTransform != null)
+                        {
+                            gripInitialised = true;
+                        }
                         break;
                     case "touchpad":
                         tipText = touchpadText;
                         tipTransform = GetTransform(touchpad, "trackpad"); ;
+                        if (tipTransform != null)
+                        {
+                            touchpadInitialised = true;
+                        }
                         break;
                     case "appmenu":
                         tipText = appMenuText;
                         tipTransform = GetTransform(appMenu, "button"); ;
+                        if (tipTransform != null)
+                        {
+                            appMenuInitialised = true;
+                        }
                         break;
                 }
 
@@ -62,7 +116,17 @@
                 tooltip.lineColor = tipLineColor;
 
                 tooltip.Reset();
+
+                if(tipText.Trim().Length == 0)
+                {
+                    tooltip.gameObject.SetActive(false);
+                }
             }
+        }
+
+        private bool TipsInitialised()
+        {
+            return (triggerInitialised && gripInitialised && touchpadInitialised && appMenuInitialised);
         }
 
         private Transform GetTransform(Transform setTransform, string findTransform)
@@ -71,12 +135,21 @@
             if (setTransform)
             {
                 returnTransform = setTransform;
-            } else
+            }
+            else
             {
                 returnTransform = this.transform.parent.FindChild("Model/" + findTransform + "/attach");
             }
 
             return returnTransform;
+        }
+
+        private void Update()
+        {
+            if (!TipsInitialised())
+            {
+                InitialiseTips();
+            }
         }
     }
 }

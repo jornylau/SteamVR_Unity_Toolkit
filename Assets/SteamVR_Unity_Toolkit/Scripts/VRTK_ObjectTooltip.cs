@@ -47,8 +47,8 @@
         private void SetText(string name)
         {
             var tmpText = this.transform.FindChild("TooltipCanvas/" + name).GetComponent<Text>();
-            tmpText.material = new Material(Shader.Find("UI/Overlay"));
-            tmpText.text = displayText;
+            tmpText.material = Resources.Load("UIText") as Material;
+            tmpText.text = displayText.Replace("\\n", "\n");
             tmpText.color = fontColor;
             tmpText.fontSize = fontSize;
         }
@@ -56,7 +56,7 @@
         private void SetLine()
         {
             line = this.transform.FindChild("Line").GetComponent<LineRenderer>();
-            line.material = new Material(Shader.Find("Unlit/Color"));
+            line.material = Resources.Load("TooltipLine") as Material;
             line.material.color = lineColor;
             line.SetColors(lineColor, lineColor);
             line.SetWidth(lineWidth, lineWidth);

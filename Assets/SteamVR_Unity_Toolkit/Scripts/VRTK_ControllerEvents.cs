@@ -24,9 +24,11 @@
             Application_Menu
         }
 
-        public ButtonAlias pointerToggleButton = ButtonAlias.Grip;
-        public ButtonAlias grabToggleButton = ButtonAlias.Trigger;
+        public ButtonAlias pointerToggleButton = ButtonAlias.Touchpad_Press;
+        public ButtonAlias pointerSetButton = ButtonAlias.Touchpad_Press;
+        public ButtonAlias grabToggleButton = ButtonAlias.Grip;
         public ButtonAlias useToggleButton = ButtonAlias.Trigger;
+        public ButtonAlias uiClickButton = ButtonAlias.Trigger;
         public ButtonAlias menuToggleButton = ButtonAlias.Application_Menu;
 
         public int axisFidelity = 1;
@@ -42,6 +44,7 @@
         public bool pointerPressed = false;
         public bool grabPressed = false;
         public bool usePressed = false;
+        public bool uiClickPressed = false;
         public bool menuPressed = false;
 
         public event ControllerInteractionEventHandler TriggerPressed;
@@ -65,6 +68,7 @@
 
         public event ControllerInteractionEventHandler AliasPointerOn;
         public event ControllerInteractionEventHandler AliasPointerOff;
+        public event ControllerInteractionEventHandler AliasPointerSet;
 
         public event ControllerInteractionEventHandler AliasGrabOn;
         public event ControllerInteractionEventHandler AliasGrabOff;
@@ -74,6 +78,9 @@
 
         public event ControllerInteractionEventHandler AliasMenuOn;
         public event ControllerInteractionEventHandler AliasMenuOff;
+
+        public event ControllerInteractionEventHandler AliasUIClickOn;
+        public event ControllerInteractionEventHandler AliasUIClickOff;
 
         private uint controllerIndex;
         private SteamVR_TrackedObject trackedController;
@@ -169,6 +176,12 @@
                 AliasPointerOff(this, e);
         }
 
+        public virtual void OnAliasPointerSet(ControllerInteractionEventArgs e)
+        {
+            if (AliasPointerSet != null)
+                AliasPointerSet(this, e);
+        }
+
         public virtual void OnAliasGrabOn(ControllerInteractionEventArgs e)
         {
             if (AliasGrabOn != null)
@@ -191,6 +204,18 @@
         {
             if (AliasUseOff != null)
                 AliasUseOff(this, e);
+        }
+
+        public virtual void OnAliasUIClickOn(ControllerInteractionEventArgs e)
+        {
+            if (AliasUIClickOn != null)
+                AliasUIClickOn(this, e);
+        }
+
+        public virtual void OnAliasUIClickOff(ControllerInteractionEventArgs e)
+        {
+            if (AliasUIClickOff != null)
+                AliasUIClickOff(this, e);
         }
 
         public virtual void OnAliasMenuOn(ControllerInteractionEventArgs e)
@@ -227,6 +252,11 @@
             return CalculateTouchpadAxisAngle(touchpadAxis);
         }
 
+        public bool AnyButtonPressed()
+        {
+            return (triggerPressed || gripPressed || touchpadPressed || applicationMenuPressed);
+        }
+
         private ControllerInteractionEventArgs SetButtonEvent(ref bool buttonBool, bool value, float buttonPressure)
         {
             buttonBool = value;
@@ -242,6 +272,7 @@
         private void Awake()
         {
             trackedController = GetComponent<SteamVR_TrackedObject>();
+            this.gameObject.layer = LayerMask.NameToLayer("Ignore Raycast");
         }
 
         private void Start()
@@ -277,6 +308,14 @@
                 }
             }
 
+            if (pointerSetButton == type)
+            {
+                if (! touchDown)
+                {
+                    OnAliasPointerSet(SetButtonEvent(ref buttonBool, false, buttonPressure));
+                }
+            }
+
             if (grabToggleButton == type)
             {
                 if (touchDown)
@@ -302,6 +341,20 @@
                 {
                     usePressed = false;
                     OnAliasUseOff(SetButtonEvent(ref buttonBool, false, buttonPressure));
+                }
+            }
+
+            if (uiClickButton == type)
+            {
+                if (touchDown)
+                {
+                    uiClickPressed = true;
+                    OnAliasUIClickOn(SetButtonEvent(ref buttonBool, true, buttonPressure));
+                }
+                else
+                {
+                    uiClickPressed = false;
+                    OnAliasUIClickOff(SetButtonEvent(ref buttonBool, false, buttonPressure));
                 }
             }
 

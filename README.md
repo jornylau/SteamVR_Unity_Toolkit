@@ -12,7 +12,16 @@ from the Unity Asset Store to be imported into your Unity project.**
   > _money and you get something to play!_
   >
   > **[Buy Holodaze from the Steam Store](http://store.steampowered.com/app/475520)**
+  
+## Games, Apps and Experiences that use this Toolkit
 
+ * Games
+  * QuiVR | [Steam Store Page](http://store.steampowered.com/app/489380/)
+  * Left-Hand Path | [Steam Store Page](http://store.steampowered.com/app/488760/)
+  * Holodaze | [Steam Store Page](http://store.steampowered.com/app/475520/)
+  * ViveSpray | [Steam Store Page](http://store.steampowered.com/app/494830/)
+  * VeeR Pong | [Steam Store Page](http://store.steampowered.com/app/494850)
+  * Emergence Fractal Universe | [Steam Store Page](http://store.steampowered.com/app/500470)
 
 ## Quick Start
 
@@ -67,24 +76,10 @@ showing the `SteamVR_Unity_Toolkit` in action.
 
 The available Prefabs are:
 
-  * `[CameraRig]`
   * `FramesPerSecondCanvas`
   * `ObjectTooltip`
   * `ControllerTooltips`
   * `RadialMenu`
-
-#### [CameraRig]
-
-The `[CameraRig]` has been taken directly from the SteamVR Unity
-plugin example: `SteamVR/Extras/SteamVR_TestThrow` scene as it includes
-the relevant `Model` children on the controller (which seem to b
-missing from the default prefab in the SteamVR plugin
-`SteamVR/Prefabs/[CameraRig].prefab`.
-
-The `SteamVR_Unity_Toolkit/Prefabs/[CameraRig]` can be dropped into
-any scene to provide instant access to a VR game camera via the VR
-headset and tracking of the VR controllers including model
-representations.
 
 #### FramesPerSecondCanvas
 
@@ -199,7 +194,10 @@ The following script parameters are available:
 
 If the transforms for the buttons are not provided, then the script
 will attempt to find the attach transforms on the default controller
-model in the `[CameraRig]` prefab provided by this toolkit.
+model in the `[CameraRig]` prefab.
+
+If no text is provided for one of the elements then the tooltip for
+that element will be set to disabled.
 
 An example of the `ControllerTooltips` Prefab can be viewed in the
 scene `SteamVR_Unity_Toolkit/Examples/029_Controller_Tooltips` which
@@ -254,7 +252,7 @@ the `Events` parameter of the `Radial Menu Controller` script also
 attached to the prefab.
 
 An example of the `RadialMenu` Prefab can be viewed in the scene
-`SteamVR_Unity_Toolkit/Examples/030_Radial_Touchpad_Menu`, which
+`SteamVR_Unity_Toolkit/Examples/030_Controls_RadialTouchpadMenu`, which
 displays a radial menu for each controller. The left controller uses
 the `Hide On Release` variable, so it will only be visible if the
 left touchpad is being touched.
@@ -277,6 +275,33 @@ common controller actions. The following public methods are available:
   controller model to the given boolean state. If true is passed
   then the controller model is displayed, if false is passed then
   the controller model is hidden.
+  * **SetControllerOpacity(float alpha):** changes the transparency
+  of the controller model to the given alpha.
+  * **HighlightControllerElement(GameObject element, Color? highlight, float fadeDuration = 0f):**
+  initiates a change in material colour to the `highlight` colour
+  on given `element`. It will lerp to the new colour if a
+  `fadeDuration` is provided.
+  * **UnhighlightControllerElement(GameObject element):** reverts the
+  given controller `element` back to it's original material state.
+  * **ToggleHighlightControllerElement(bool state, GameObject element, Color? highlight = null, float duration = 0f):**
+  a helper method which calls `HighlightControllerElement` if the given
+  `state` is true and calls `UnhighlightControllerElement` if the given
+  `state` is false.
+  * **ToggleHighlightTrigger(bool state, Color? highlight = null, float duration = 0f):**
+  a helper method to toggle the default HTC Vive controller trigger
+  button to the given `highlight` colour over the given `duration`.
+  * **ToggleHighlightGrip(bool state, Color? highlight = null, float duration = 0f):**
+  a helper method to toggle the default HTC Vive controller grip
+  button to the given `highlight` colour over the given `duration`.
+  * **ToggleHighlightTouchpad(bool state, Color? highlight = null, float duration = 0f):**
+  a helper method to toggle the default HTC Vive controller touchpad
+  button to the given `highlight` colour over the given `duration`.
+  * **ToggleHighlightApplicationMenu(bool state, Color? highlight = null, float duration = 0f):**
+  a helper method to toggle the default HTC Vive controller app menu
+  button to the given `highlight` colour over the given `duration`.
+  * **ToggleHighlightController(bool state, Color? highlight = null, float duration = 0f):**
+  a helper method to toggle the entire controller model to the given
+  `highlight` colour over the given `duration`.
   * **TriggerHapticPulse(int duration, ushort strength):**
   initiates the controller to begin vibrating for the given tick
   duration provided in the first parameter at a vibration intensity
@@ -287,6 +312,12 @@ An example of the `VRTK_ControllerActions` script can be viewed in
 the scene `SteamVR_Unity_Toolkit/Examples/016_Controller_HapticRumble`
 which demonstrates the ability to hide a controller model and make
 the controller vibrate for a given length of time at a given intensity.
+
+Another example can be viewed in the scene
+`SteamVR_Unity_Toolkit/Examples/035_Controller_OpacityAndHighlighting`
+which demonstrates the ability to change the opacity of a controller
+model and to highlight specific elements of a controller such as the
+buttons or even the entire controller model.
 
 #### Controller Events (VRTK_ControllerEvents)
 
@@ -358,18 +389,22 @@ buttons are pressed. These action aliases can be mapped to a
 preferred controller button. The aliases are:
 
   * **Toggle Pointer:** Common action of turning a laser pointer on/off
+  * **Pointer Set:** Common action of setting a destination marker from
+  the cursor position of the pointer
   * **Toggle Grab:** Common action of grabbing game objects
   * **Toggle Use:** Common action of using game objects
+  * **UI Click:** Common action of clicking a UI element
   * **Toggle Menu:** Common action of bringing up an in-game menu
 
 Each of the above aliases can have the preferred controller button
 mapped to their usage by selecting it from the drop down on the script
 parameters window.
 
-When the set button is pressed it will emit the actual button event as
-well as an additional event that the alias is "On". When the set button
-is released it will emit the actual button event as well as an
-additional event that the alias button is "Off".
+When the relevant button is pressed it will emit the actual button
+event as well as an additional event that the alias is `On`. When
+the set button is released it will emit the actual button event as
+well as an additional event that the alias button is `Off`. The
+`Pointer Set` alias is only triggered when the button is released.
 
 Listening for these alias events rather than the actual button events
 means it's easier to customise the controller buttons to the actions
@@ -414,6 +449,9 @@ The following script parameters are available:
   pointer. If the script is being applied onto a controller then this
   parameter can be left blank as it will be auto populated by the
   controller the script is on at runtime.
+  * **Pointer Material:** The material to use on the rendered version
+  of the pointer. If no material is selected then the default
+  `WorldPointer` material will be used.
   * **Pointer Hit Color:** The colour of the beam when it is colliding
   with a valid target. It can be set to a different colour for each
   controller.
@@ -431,6 +469,9 @@ The following script parameters are available:
   pointer colour will change to the `Pointer Miss Color` and the
   `WorldPointerDestinationSet` event will not be triggered, which will
   prevent teleporting into areas where the play area will collide.
+  * **Ignore Target With Tag Or Class:** A string that specifies an
+  object Tag or the name of a Script attached to an obejct and
+  notifies the play area cursor to ignore collisions with the object.
   * **Pointer Visibility:** Determines when the pointer beam should be
   displayed:
    * `On_When_Active` only shows the pointer beam when the Pointer
@@ -452,6 +493,8 @@ The following script parameters are available:
   stopping.
   * **Show Pointer Tip:** Toggle whether the cursor is shown on the end
   of the pointer beam.
+  * **Custom Pointer Cursor:** A custom Game Object can be applied
+  here to use instead of the default sphere for the pointer cursor.
   * **Layers To Ignore:** The layers to ignore when raycasting.
 
 The Simple Pointer object extends the `VRTK_WorldPointer` abstract
@@ -497,6 +540,9 @@ The following script parameters are available:
   pointer. If the script is being applied onto a controller then this
   parameter can be left blank as it will be auto populated by the
   controller the script is on at runtime.
+  * **Pointer Material:** The material to use on the rendered version
+  of the pointer. If no material is selected then the default
+  `WorldPointer` material will be used.
   * **Pointer Hit Color:** The colour of the beam when it is colliding
   with a valid target. It can be set to a different colour for each
   controller.
@@ -514,6 +560,9 @@ The following script parameters are available:
   pointer colour will change to the `Pointer Miss Color` and the
   `WorldPointerDestinationSet` event will not be triggered, which will
   prevent teleporting into areas where the play area will collide.
+  * **Ignore Target With Tag Or Class:** A string that specifies an
+  object Tag or the name of a Script attached to an obejct and
+  notifies the play area cursor to ignore collisions with the object.
   * **Pointer Visibility:** Determines when the pointer beam should be
   displayed:
    * `On_When_Active` only shows the pointer beam when the Pointer
@@ -570,6 +619,36 @@ The bezier curve generation code is in another script located at
 `SteamVR_Unity_Toolkit/Scripts/Helper/CurveGenerator.cs` and was
 heavily inspired by the tutorial and code from [Catlike Coding].
 
+#### Unity UI Pointer (VRTK_UIPointer)
+
+The UI Pointer provides a mechanism for interacting with Unity UI
+elements on a world canvas. The UI Pointer can be attached to any game
+object the same way in which a World Pointer can be and the UI Pointer
+also requires a controller to initiate the pointer activation and
+pointer click states.
+
+The simplest way to use the UI Pointer is to attach the script to a
+game controller within the `[CameraRig]` along with a Simple Pointer
+as this provides visual feedback as to where the UI ray is pointing.
+
+The UI pointer is activated via the `Pointer` alias on the
+`Controller Events` and the UI pointer click state is triggered via
+the `UI Click` alias on the `Controller Events`.
+
+The following script parameters are available:
+
+  * **Controller:** The controller that will be used to toggle the
+  pointer. If the script is being applied onto a controller then this
+  parameter can be left blank as it will be auto populated by the
+  controller the script is on at runtime.
+
+An example of the `VRTK_UIPointer` script can be viewed in the
+scene `SteamVR_Unity_Toolkit/Examples/034_Controls_InteractingWithUnityUI`.
+The scene uses the `VRTK_UIPointer` script on the right Controller to
+allow for the interaction with Unity UI elements using a Simple Pointer
+beam. The left Controller controls a Simple Pointer on the headset to
+demonstrate gaze interaction with Unity UI elements.
+
 #### Basic Teleporter (VRTK_BasicTeleport)
 
 The basic teleporter updates the `[CameraRig]` x/z position in the
@@ -617,7 +696,8 @@ scene `SteamVR_Unity_Toolkit/Examples/004_CameraRig_BasicTeleport`.
 The scene uses the `VRTK_SimplePointer` script on the Controllers to
 initiate a laser pointer by pressing the `Touchpad` on the controller
 and when the laser pointer is deactivated (release the `Touchpad`)
-then the user is teleported to the location of the laser pointer tip.
+then the user is teleported to the location of the laser pointer tip
+as this is where the pointer destination marker position is set to.
 
 #### Height Adjustable Teleporter (VRTK_HeightAdjustTeleport)
 
@@ -814,32 +894,33 @@ will cause the user to appear back at their last good known position.
 ##### VRTK_RoomExtender
 
 This script allows the playArea to move with the user.
-The CameraRig is only moved when at the edge of a defined circle.
+The `[CameraRig]` is only moved when at the edge of a defined circle.
 Aims to create a virtually bigger play area. To use this add this
-script to the CameraRig.
+script to the `[CameraRig`] prefab.
 
 The following script parameters are available:
 
   * **Additional Movement Enabled:** This is the a public variable to
   enable the additional movement. This can be used in other scripts to
-  toggle the CameraRig movement.
+  toggle the `[CameraRig]` movement.
   * **Additional Movement Enabled On Button Press:** This configures
   the controls of the RoomExtender. If this is true you have to press
   the touchpad to enable it. If this is false you can disable it with
   pressing the touchpad.
   * **Additional Movement Multiplier:** This is the factor by which
   movement at the edge of the circle is amplified. 0 is no movement of
-  the CameraRig. Higher values simulate a bigger play area but may be
-  to uncomfortable.
+  the `[CameraRig]`. Higher values simulate a bigger play area but may
+  be too uncomfortable.
   * **Head Zone Radius:** This is the size of the circle in which the
   playArea is not moved and everything is normal. If it is to low it
   becomes uncomfortable when crouching.
   * **Debug Transform:** This transform visualises the circle around
-  the user where the CameraRig is not moved. In the demo scene this is
-  a cylinder at floor level. Remember to turn of collisions.
+  the user where the `[CameraRig]` is not moved. In the demo scene this
+  is a cylinder at floor level. Remember to turn of collisions.
 
 There is an additional script `VRTK_RoomExtender_PlayAreaGizmo` which
-can be attachted to the CameraRig to visualize the extended playArea.
+can be attachted to the `[CameraRig`] to visualize the extended
+playArea.
 
 An example of the `VRTK_RoomExtender` script can be viewed in the scene
 `SteamVR_Unity_Toolkit/Examples/028_CameraRig_RoomExtender`.
@@ -932,6 +1013,10 @@ The following script parameters are available:
    * `Track Object` doesn't attach the object to the controller via
    a joint, instead it ensures the object tracks the direction of the
    controller, which works well for items that are on hinged joints.
+   * `Rotator Track` also tracks the object but instead of the object
+   tracking the direction of the controller, a force is applied to
+   the object to cause it to rotate. This is ideal for hinged joints
+   on items such as wheels or doors.
    * `Child Of Controller` simply makes the object a child of the
    controller grabbing so it naturally tracks the position of the
    controller motion.
@@ -1115,7 +1200,7 @@ The following script parameters are available:
   held down then the grab action will be successful.
   * **Throw Multiplier:** An amount to multiply the velocity of any
   objects being thrown. This can be useful when scaling up the
-  CameraRig to simulate being able to throw items further.
+  `[CameraRig]` to simulate being able to throw items further.
   * **Create Rigid Body When Not Touching:** If this is checked and the
   controller is not touching an Interactable Object when the grab
   button is pressed then a rigid body is added to the controller to
@@ -1230,7 +1315,7 @@ automatically grabs a sword to each controller and also prevents the
 swords from being dropped so they are permanently attached to the
 user's controllers.
 
-#### 3D UI Controls (Controls/)
+#### 3D UI Controls (Controls/3D)
 
 In order to interact with the world beyond grabbing and throwing, controls
 can be used to mimic real-life objects.
@@ -1256,8 +1341,9 @@ The following UI controls are available:
 
 Attaching the script to a game object will allow you to interact with it
 as if it were a push button. The direction into which the button should
-be pushable can be freely set. Since this is physics-based there needs to
-be empty space in the push direction so that the button can move.
+be pushable can be freely set and auto-detection is supported. Since this 
+is physics-based there needs to be empty space in the push direction so 
+that the button can move.
 
 The script will instantiate the required Rigidbody and ConstantForce
 components automatically in case they do not exist yet.
@@ -1275,23 +1361,51 @@ The following events are emitted:
 
   * **OnPushed:** When the button is successfully pushed.
 
-##### VRTK_Slider
+##### VRTK_Chest
 
-Attaching the script to a game object will allow you to interact with it
-as if it were a horizontal or vertical slider. The direction can be freely
-set and auto-detection is supported.
+Transforms a game object into a chest with a lid. The direction can be either
+x or z and can also be auto-detected with very high reliability.
 
-The script will instantiate the required Rigidbody and Interactable
-components automatically in case they do not exist yet.
+The script will instantiate the required Rigidbody, Interactable and
+HingeJoint components automatically in case they do not exist yet. It will
+expect three distinct game objects: a body, a lid and a handle. These should
+be independent and not children of each other.
 
 The following script parameters are available:
 
-  * **Direction:** The axis on which the slider should move. All other axis
-  will be frozen.
-  * **Min:** The minimum value of the slider.
-  * **Max:** The maximum value of the slider.
-  * **Step Size:** The increments in which slider values can change. The
-  slider supports snapping.
+  * **Direction:** The axis on which the chest should open. All
+  other axis will be frozen.
+  * **Max:** The maximum opening angle of the chest.
+  * **Lid:** The game object for the lid.
+  * **Body:** The game object for the body.
+  * **Handle:** The game object for the handle. 
+
+##### VRTK_Drawer
+
+Transforms a game object into a drawer. The direction can be either
+x or z and can also be auto-detected with very high reliability.
+
+The script will instantiate the required Rigidbody, Interactable and
+Joint components automatically in case they do not exist yet. It will
+expect two distinct game objects: a body and a handle. These should
+be independent and not children of each other. The distance to which the
+drawer can be pulled out will automatically set depending on the length
+of it.
+
+It is possible to supply a third game object which is the root of the 
+contents inside the drawer. When this is specified the 
+VRTK_InteractableObject components will be automatically deactivated
+in case the drawer is closed or not yet far enough open. This eliminates
+the issue that a user could grab an object inside a drawer although it
+is closed.
+
+The following script parameters are available:
+
+  * **Direction:** The axis on which the chest should open. All
+  other axis will be frozen.
+  * **Body:** The game object for the body.
+  * **Handle:** The game object for the handle. 
+  * **Content:** The parent game object for the drawer content elements. 
 
 ##### VRTK_Knob
 
@@ -1322,11 +1436,29 @@ HingeJoint component yourself and configure it as needed.
 
 The following script parameters are available:
 
-  * **Direction:** The axis on which the lever  should rotate. All
+  * **Direction:** The axis on which the lever should rotate. All
   other axis will be frozen.
   * **Min:** The minimum value of the lever.
   * **Max:** The maximum value of the lever.
   * **Step Size:** The increments in which lever values can change.
+
+##### VRTK_Slider
+
+Attaching the script to a game object will allow you to interact with it
+as if it were a horizontal or vertical slider. The direction can be freely
+set and auto-detection is supported.
+
+The script will instantiate the required Rigidbody and Interactable
+components automatically in case they do not exist yet.
+
+The following script parameters are available:
+
+  * **Direction:** The axis on which the slider should move. All other axis
+  will be frozen.
+  * **Min:** The minimum value of the slider.
+  * **Max:** The maximum value of the slider.
+  * **Step Size:** The increments in which slider values can change. The
+  slider supports snapping.
 
 #### 2D UI Controls (Controls/2D)
 
@@ -1444,6 +1576,9 @@ The following script parameters are available:
   pointer. If the script is being applied onto a controller then this
   parameter can be left blank as it will be auto populated by the
   controller the script is on at runtime.
+  * **Pointer Material:** The material to use on the rendered version
+  of the pointer. If no material is selected then the default
+  `WorldPointer` material will be used.
   * **Pointer Hit Color:** The colour of the beam when it is colliding
   with a valid target. It can be set to a different colour for each
   controller.
@@ -1461,6 +1596,9 @@ The following script parameters are available:
   pointer colour will change to the `Pointer Miss Color` and the
   `WorldPointerDestinationSet` event will not be triggered, which will
   prevent teleporting into areas where the play area will collide.
+  * **Ignore Target With Tag Or Class:** A string that specifies an
+  object Tag or the name of a Script attached to an obejct and
+  notifies the play area cursor to ignore collisions with the object.
   * **Pointer Visibility:** Determines when the pointer beam should be
   displayed:
    * `On_When_Active` only shows the pointer beam when the Pointer
@@ -1656,7 +1794,7 @@ The current examples are:
   connecting the object to the controller. Fixed Joint works well for
   holding objects like cubes as they track perfectly to the controller
   whereas a Spring Joint works well on the drawer to give it a natural
-  slide when operating. Finally, the Track Object works well on the
+  slide when operating. Finally, the Rotator Track works well on the
   door to give a natural control over the swing of the door. There is
   also a Character Joint object that can be manipulated into different
   shapes by pulling each of the relevant sections.
@@ -1715,7 +1853,7 @@ The current examples are:
   tooltips to game objects and to the controllers using the prefabs
   `ObjectTooltip` and `ControllerTooltips`.
 
-  * **030_Radial_Touchpad_Menu:** A scene that demonstrates adding
+  * **030_Controls_RadialTouchpadMenu:** A scene that demonstrates adding
   dynamic radial menus to controllers using the prefab `RadialMenu`.
 
   * **031_CameraRig_HeadsetGazePointer:** A scene that demonstrates
@@ -1735,6 +1873,18 @@ The current examples are:
   * **033_CameraRig_TeleportingInNavMesh:** A scene that demonstrates
   how a baked NavMesh can be used to define the regions that a user
   is allowed to teleport into.
+
+  * **034_Controls_InteractingWithUnityUI:** A scene that demonstrates
+  how to interact with Unity UI elements. The scene uses the
+  `VRTK_UIPointer` script on the right Controller to allow for the
+  interaction with Unity UI elements using a Simple Pointer beam. The
+  left Controller controls a Simple Pointer on the headset to
+  demonstrate gaze interaction with Unity UI elements.
+
+  * **035_Controller_OpacityAndHighlighting:** A scene that
+  demonstrates how to change the opacity of the controller and how
+  to highlight elements of the controller such as the buttons or even
+  the entire controller model.
 
 ## Contributing
 

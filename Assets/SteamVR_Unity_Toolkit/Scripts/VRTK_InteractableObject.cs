@@ -29,6 +29,7 @@ namespace VRTK
             Fixed_Joint,
             Spring_Joint,
             Track_Object,
+            Rotator_Track,
             Child_Of_Controller
         }
 
@@ -89,6 +90,7 @@ namespace VRTK
         private Transform grabbedSnapHandle;
         private Transform trackPoint;
         private bool customTrackPoint = false;
+        private Transform originalControllerAttachPoint;
 
         private Transform previousParent;
         private bool previousKinematicState;
@@ -253,7 +255,7 @@ namespace VRTK
 
         public bool AttachIsTrackObject()
         {
-            return (grabAttachMechanic == GrabAttachType.Track_Object);
+            return (grabAttachMechanic == GrabAttachType.Track_Object || grabAttachMechanic == GrabAttachType.Rotator_Track);
         }
 
         public void ZeroVelocity()
@@ -304,11 +306,13 @@ namespace VRTK
 
             if (grabbingObject != null)
             {
+                grabbingObject.GetComponent<VRTK_InteractTouch>().ForceStopTouching();
                 grabbingObject.GetComponent<VRTK_InteractGrab>().ForceRelease();
             }
 
             if (usingObject != null)
             {
+                usingObject.GetComponent<VRTK_InteractTouch>().ForceStopTouching();
                 usingObject.GetComponent<VRTK_InteractUse>().ForceStopUsing();
             }
         }
@@ -316,6 +320,14 @@ namespace VRTK
         public void SetGrabbedSnapHandle(Transform handle)
         {
             grabbedSnapHandle = handle;
+        }
+
+        public void RegisterTeleporters()
+        {
+            foreach (var teleporter in GameObject.FindObjectsOfType<VRTK_BasicTeleport>())
+            {
+                teleporter.Teleported += new TeleportEventHandler(OnTeleported);
+            }
         }
 
         protected virtual void Awake()
@@ -334,6 +346,7 @@ namespace VRTK
         protected virtual void Start()
         {
             originalObjectColours = StoreOriginalColors();
+            RegisterTeleporters();
         }
 
         protected virtual void Update()
@@ -343,7 +356,7 @@ namespace VRTK
                 ForceStopInteracting();
             }
 
-            if (grabAttachMechanic == GrabAttachType.Track_Object)
+            if (AttachIsTrackObject())
             {
                 CheckBreakDistance();
             }
@@ -351,9 +364,17 @@ namespace VRTK
 
         protected virtual void FixedUpdate()
         {
-            if (grabAttachMechanic == GrabAttachType.Track_Object)
+            if (trackPoint)
             {
-                FixedUpdateTrackedObject();
+                switch (grabAttachMechanic)
+                {
+                    case GrabAttachType.Rotator_Track:
+                        FixedUpdateRotatorTrack();
+                        break;
+                    case GrabAttachType.Track_Object:
+                        FixedUpdateTrackObject();
+                        break;
+                }
             }
         }
 
@@ -456,26 +477,39 @@ namespace VRTK
 
         private void SetTrackPoint(GameObject point)
         {
-            Transform controllerPoint = point.transform;
+            var controllerPoint = point.transform;
+            var grabScript = point.GetComponent<VRTK_InteractGrab>();
 
-            if (point.GetComponent<VRTK_InteractGrab>() && point.GetComponent<VRTK_InteractGrab>().controllerAttachPoint)
+            if (grabScript && grabScript.controllerAttachPoint)
             {
-                controllerPoint = point.GetComponent<VRTK_InteractGrab>().controllerAttachPoint.transform;
+                controllerPoint = grabScript.controllerAttachPoint.transform;
             }
 
-            if (grabAttachMechanic == GrabAttachType.Track_Object && precisionSnap)
+            if (AttachIsTrackObject() && precisionSnap)
             {
                 trackPoint = new GameObject(string.Format("[{0}]TrackObject_PrecisionSnap_AttachPoint", this.gameObject.name)).transform;
                 trackPoint.parent = point.transform;
-                trackPoint.position = this.transform.position;
-                trackPoint.rotation = this.transform.rotation;
                 customTrackPoint = true;
+                if(grabAttachMechanic == GrabAttachType.Track_Object)
+                {
+                    trackPoint.position = this.transform.position;
+                    trackPoint.rotation = this.transform.rotation;
+                } else
+                {
+                    trackPoint.position = controllerPoint.position;
+                    trackPoint.rotation = controllerPoint.rotation;
+                }
             }
             else
             {
                 trackPoint = controllerPoint;
                 customTrackPoint = false;
             }
+
+            originalControllerAttachPoint = new GameObject(string.Format("[{0}]Original_Controller_AttachPoint", grabbingObject.name)).transform;
+            originalControllerAttachPoint.parent = this.transform;
+            originalControllerAttachPoint.position = trackPoint.position;
+            originalControllerAttachPoint.rotation = trackPoint.rotation;
         }
 
         private void RemoveTrackPoint()
@@ -488,43 +522,58 @@ namespace VRTK
             {
                 trackPoint = null;
             }
+            if (originalControllerAttachPoint)
+            {
+                Destroy(originalControllerAttachPoint.gameObject);
+            }
         }
 
-        private void FixedUpdateTrackedObject()
+        private void FixedUpdateRotatorTrack()
         {
-            if (trackPoint)
+            var rotateForce = trackPoint.position - originalControllerAttachPoint.position;
+            rb.AddForceAtPosition(rotateForce, originalControllerAttachPoint.position, ForceMode.VelocityChange);
+        }
+
+        private void FixedUpdateTrackObject()
+        {
+            float maxDistanceDelta = 10f;
+
+            Quaternion rotationDelta;
+            Vector3 positionDelta;
+
+            float angle;
+            Vector3 axis;
+
+            if (grabbedSnapHandle != null)
             {
-                float maxDistanceDelta = 10f;
+                rotationDelta = trackPoint.rotation * Quaternion.Inverse(grabbedSnapHandle.rotation);
+                positionDelta = trackPoint.position - grabbedSnapHandle.position;
+            }
+            else
+            {
+                rotationDelta = trackPoint.rotation * Quaternion.Inverse(this.transform.rotation);
+                positionDelta = trackPoint.position - this.transform.position;
+            }
 
-                Quaternion rotationDelta;
-                Vector3 positionDelta;
+            rotationDelta.ToAngleAxis(out angle, out axis);
 
-                float angle;
-                Vector3 axis;
+            angle = (angle > 180 ? angle -= 360 : angle);
 
-                if (grabbedSnapHandle != null)
-                {
-                    rotationDelta = trackPoint.rotation * Quaternion.Inverse(grabbedSnapHandle.rotation);
-                    positionDelta = trackPoint.position - grabbedSnapHandle.position;
-                }
-                else
-                {
-                    rotationDelta = trackPoint.rotation * Quaternion.Inverse(this.transform.rotation);
-                    positionDelta = trackPoint.position - this.transform.position;
-                }
+            if (angle != 0)
+            {
+                Vector3 angularTarget = angle * axis;
+                rb.angularVelocity = Vector3.MoveTowards(rb.angularVelocity, angularTarget, maxDistanceDelta);
+            }
 
-                rotationDelta.ToAngleAxis(out angle, out axis);
+            Vector3 velocityTarget = positionDelta / Time.fixedDeltaTime;
+            rb.velocity = Vector3.MoveTowards(rb.velocity, velocityTarget, maxDistanceDelta);
+        }
 
-                angle = (angle > 180 ? angle -= 360 : angle);
-
-                if (angle != 0)
-                {
-                    Vector3 angularTarget = angle * axis;
-                    rb.angularVelocity = Vector3.MoveTowards(rb.angularVelocity, angularTarget, maxDistanceDelta);
-                }
-
-                Vector3 velocityTarget = positionDelta / Time.fixedDeltaTime;
-                rb.velocity = Vector3.MoveTowards(rb.velocity, velocityTarget, maxDistanceDelta);
+        private void OnTeleported(object sender, DestinationMarkerEventArgs e)
+        {
+            if (AttachIsTrackObject() && trackPoint)
+            {
+                this.transform.position = grabbingObject.transform.position;
             }
         }
     }
